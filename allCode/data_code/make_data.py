@@ -24,7 +24,7 @@ class Data():
             for line in f:
                 self.keyword = line.strip()
                 self.keyword_file = self.keyword.replace(' ', '_')
-                self.get_data(self.keyword, self.keyword_file, 2004, 1, 2022, 12)
+                self.get_data(self.keyword, self.keyword_file, 2004, 1, 2011, 12)
                 self.duplicate_days_of_the_week()
                 self.adjust_weekly()
                 self.adjust_daily()
@@ -202,9 +202,9 @@ class Data():
             df_all_weekly_on_daily = pd.concat([df_all_weekly_on_daily, temp], axis=0)
         # insert the data to 1 data
         df_all_weekly_on_daily.to_csv(
-            rf'C:\Users\Ayala~\Documents\אילה\שנה ב\project\data\data2\weekly_data\{self.keyword_file}.csv',
+            rf'C:\Users\tichnut\Downloads\project_python\data\data2\weekly_data\{self.keyword_file}.csv',
             index=True)
-        self.daily.to_csv(rf'C:\Users\Ayala~\Documents\אילה\שנה ב\project\data\data2\daily_data\{self.keyword_file}.csv',
+        self.daily.to_csv(rf'C:\Users\tichnut\Downloads\project_python\data\data2\daily_data\{self.keyword_file}.csv',
                           index=True)
 
 
@@ -268,7 +268,7 @@ class Data():
             [self.keyword, 'percentage_change'], axis=1)
 
         self.weekly.to_csv(
-            rf'C:\Users\Ayala~\Documents\אילה\שנה ב\project\data\data1\weekly_data\{self.keyword_file}.csv',
+            rf'C:\Users\tichnut\Downloads\project_python\data\data1\weekly_data\{self.keyword_file}.csv',
             index=True)
 
 
@@ -286,7 +286,7 @@ class Data():
                                           self.daily[self.keyword].pct_change()
         self.daily['Adjusted'] = ''
 
-        start_increment = self.daily.iloc[0].date
+        start_increment = self.daily['date'][0]
         end_increment = start_increment + relativedelta(months=+1)
         end = date(2022,12,31)
 
@@ -330,16 +330,16 @@ class Data():
             if i >= len(self.daily) - 1:
                 break
 
-            if self.daily[i]['Adjusted'] == '':
+            if self.daily['Adjusted'][i] == '':
                 j = 0
                 while True:
-                    if self.daily[i + j]['Adjusted'] == '':
+                    if self.daily['Adjusted'][i + j] == '':
                         j += 1
                     else:
                         prc = float(self.daily['percentage_change'][i + j])
                         new_value = float(self.daily['Adjusted'][i + j])
                         prev_value = new_value / prc
-                        self.daily[i + j - 1]['Adjusted'] = prev_value
+                        self.daily['Adjusted'][i + j - 1] = prev_value
 
                         j -= 1
 
@@ -357,7 +357,7 @@ class Data():
         self.daily['Adjusted'] = self.daily['Adjusted'].astype('float64')
         self.daily['Adjusted'] = self.daily['Adjusted'].round(2)
 
-        self.daily.to_csv(rf'C:\Users\Ayala~\Documents\אילה\שנה ב\project\data\data1\daily_data\{self.keyword_file}.csv',
+        self.daily.to_csv(rf'C:\Users\tichnut\Downloads\project_python\data\data1\daily_data\{self.keyword_file}.csv',
                           index=True)
 
 
