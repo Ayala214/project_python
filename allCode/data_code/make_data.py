@@ -192,16 +192,16 @@ class Data():
 
     def duplicate_days_of_the_week(self):
 
-        df_all_weekly_on_daily = pd.DataFrame(columns=['date', self.keyword])
+        self.df_all_weekly_on_daily = pd.DataFrame(columns=['date', self.keyword])
         for i in range(self.weekly.shape[0]):
             date_after_week = (self.weekly.iloc[i].date + relativedelta(days=+6))
             temp = self.get_data_of_week(self.keyword, self.weekly.iloc[i][self.keyword],
                                          date(self.weekly.iloc[i].date.year, self.weekly.iloc[i].date.month,
                                               self.weekly.iloc[i].date.day),
                                          date(date_after_week.year, date_after_week.month, date_after_week.day))
-            df_all_weekly_on_daily = pd.concat([df_all_weekly_on_daily, temp], axis=0)
+            self.df_all_weekly_on_daily = pd.concat([self.df_all_weekly_on_daily, temp], axis=0)
         # insert the data to 1 data
-        df_all_weekly_on_daily.to_csv(
+        self.df_all_weekly_on_daily.to_csv(
             rf'C:\Users\tichnut\Downloads\project_python\data\data2\weekly_data\{self.keyword_file}.csv',
             index=True)
         self.daily.to_csv(rf'C:\Users\tichnut\Downloads\project_python\data\data2\daily_data\{self.keyword_file}.csv',
@@ -279,16 +279,15 @@ class Data():
         and computes the data inbetween via the percentage change of the
         unadjusted daily data.
         """
-
         print('Adjusting daily data...')
         self.daily = self.daily.replace(0, 1)
         self.daily['percentage_change'] = 1 + \
-                                          self.daily[self.keyword].pct_change()
+            self.daily[self.keyword].pct_change()
         self.daily['Adjusted'] = ''
 
-        start_increment = self.daily['date'][0]
-        end_increment = start_increment + relativedelta(months=+1)
-        end = date(2022,12,31)
+        start_increment = self.weekly['date'][0]
+        end_increment = (start_increment + relativedelta(months=+1))+relativedelta(days=-1)
+        end = date(2011,12,31)
 
         # Compute all values after the data point, within it's increment.
         i = 0
@@ -301,16 +300,16 @@ class Data():
                 # Insert the weekly data points in each 6-month increment.
                 if not imported:
                     try:
-                        self.daily['Adjusted'][i] = self.weekly['Adjusted'].where(
+                        self.daily.loc[i, 'Adjusted'] = self.weekly['Adjusted'].where(
                             self.weekly['date'] == str(start_increment)).values[0]
                         imported = True
                     except ValueError:
-                        break
+                        pass
                 else:
                     prc = float(self.daily['percentage_change'][i])
-                    prev_value = float(self.daily['Adjusted'][i - 1])
+                    prev_value = float(self.daily['Adjusted'][i-1])
                     new_value = prev_value * prc
-                    self.daily['Adjusted'][i] = new_value
+                    self.daily.loc[i, 'Adjusted'] = new_value
 
                 start_increment += relativedelta(days=+1)
                 i += 1
@@ -330,18 +329,18 @@ class Data():
             if i >= len(self.daily) - 1:
                 break
 
-            if self.daily['Adjusted'][i] == '':
+            if self.daily.loc[i, 'Adjusted'] == '':
                 j = 0
                 while True:
-                    if self.daily['Adjusted'][i + j] == '':
+                    if self.daily.loc[i+j, 'Adjusted'] == '':
                         j += 1
                     else:
-                        prc = float(self.daily['percentage_change'][i + j])
-                        new_value = float(self.daily['Adjusted'][i + j])
+                        prc = float(self.daily['percentage_change'][i+j])
+                        new_value = float(self.daily['Adjusted'][i+j])
                         prev_value = new_value / prc
-                        self.daily['Adjusted'][i + j - 1] = prev_value
+                        self.daily.loc[i+j-1, 'Adjusted'] = prev_value
 
-                        j -= 1
+                        j =j- 1
 
                     if j <= 0:
                         break
@@ -352,10 +351,86 @@ class Data():
             [self.keyword, 'percentage_change'], axis=1)
 
         self.daily['Adjusted'] = (
-                self.daily['Adjusted'] / self.daily['Adjusted'].max())
+            self.daily['Adjusted'] / self.daily['Adjusted'].max())
 
         self.daily['Adjusted'] = self.daily['Adjusted'].astype('float64')
         self.daily['Adjusted'] = self.daily['Adjusted'].round(2)
+        # print('Adjusting daily data...')
+        # self.daily = self.daily.replace(0, 1)
+        # self.daily['percentage_change'] = 1 + \
+        #                                   self.daily[self.keyword].pct_change()
+        # self.daily['Adjusted'] = ''
+        #
+        # start_increment = self.daily['date'][0]
+        # end_increment = start_increment + relativedelta(months=+1)
+        # end = date(2022,12,31)
+        #
+        # # Compute all values after the data point, within it's increment.
+        # i = 0
+        # while True:
+        #     imported = False
+        #     while True:
+        #         if i >= len(self.daily):
+        #             break
+        #
+        #         # Insert the weekly data points in each 6-month increment.
+        #         if not imported:
+        #             try:
+        #                 self.daily['Adjusted'][i] = self.weekly['Adjusted'].where(
+        #                     self.weekly['date'] == str(start_increment)).values[0]
+        #                 imported = True
+        #             except ValueError:
+        #                 break
+        #         else:
+        #             prc = float(self.daily['percentage_change'][i])
+        #             prev_value = float(self.daily['Adjusted'][i - 1])
+        #             new_value = prev_value * prc
+        #             self.daily['Adjusted'][i] = new_value
+        #
+        #         start_increment += relativedelta(days=+1)
+        #         i += 1
+        #
+        #         if start_increment >= end_increment:
+        #             break
+        #
+        #     start_increment = end_increment
+        #     end_increment += relativedelta(months=+1)
+        #
+        #     if start_increment > end:
+        #         break
+        #
+        # # Compute all values before the data point, within it's increment.
+        # i = 0
+        # while True:
+        #     if i >= len(self.daily) - 1:
+        #         break
+        #
+        #     if self.daily['Adjusted'][i] == '':
+        #         j = 0
+        #         while True:
+        #             if self.daily['Adjusted'][i + j] == '':
+        #                 j += 1
+        #             else:
+        #                 prc = float(self.daily['percentage_change'][i + j])
+        #                 new_value = float(self.daily['Adjusted'][i + j])
+        #                 prev_value = new_value / prc
+        #                 self.daily['Adjusted'][i + j - 1] = prev_value
+        #
+        #                 j -= 1
+        #
+        #             if j <= 0:
+        #                 break
+        #
+        #     i += 1
+        #
+        # self.daily = self.daily.drop(
+        #     [self.keyword, 'percentage_change'], axis=1)
+        #
+        # self.daily['Adjusted'] = (
+        #         self.daily['Adjusted'] / self.daily['Adjusted'].max())
+        #
+        # self.daily['Adjusted'] = self.daily['Adjusted'].astype('float64')
+        # self.daily['Adjusted'] = self.daily['Adjusted'].round(2)
 
         self.daily.to_csv(rf'C:\Users\tichnut\Downloads\project_python\data\data1\daily_data\{self.keyword_file}.csv',
                           index=True)
